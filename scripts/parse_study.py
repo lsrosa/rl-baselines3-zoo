@@ -7,7 +7,6 @@ from pprint import pprint
 import optuna
 from optuna.trial import FrozenTrial
 
-
 def value_key(trial: FrozenTrial) -> float:
     # Returns value of trial object for sorting
     if trial.value is None:

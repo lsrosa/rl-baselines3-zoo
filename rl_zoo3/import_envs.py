@@ -5,6 +5,10 @@ from gymnasium.envs.registration import register
 
 from rl_zoo3.wrappers import MaskVelocityWrapper
 
+# add our env here
+from rgym.envs.reacherPolicy import ReacherPolicy 
+from rgym.envs.ex_reacher_v0 import ExReacherEnv 
+
 try:
     import pybullet_envs_gymnasium
 except ImportError:
