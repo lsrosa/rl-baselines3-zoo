@@ -48,7 +48,7 @@ from torch import nn as nn
 # Register custom envs
 import rl_zoo3.import_envs  # noqa: F401
 from rl_zoo3.callbacks import SaveVecNormalizeCallback, TrialEvalCallback
-from rl_zoo3.hyperparams_opt_sac_fe import HYPERPARAMS_SAMPLER
+from rl_zoo3.hyperparams_opt_sac_fe import HYPERPARAMS_SAMPLER, get_fe_class_kwargs
 from rl_zoo3.utils import ALGOS, get_callback_list, get_class_by_name, get_latest_run_id, get_wrapper_class, linear_schedule
 
 class ExperimentManager:
@@ -403,6 +403,8 @@ class ExperimentManager:
 
         # Pre-process policy/buffer keyword arguments
         # Convert to python object if needed
+        features_extractor_class, features_extractor_kwargs = get_fe_class_kwargs(self.device)
+        
         for kwargs_key in {"policy_kwargs", "replay_buffer_class", "replay_buffer_kwargs"}:
             if kwargs_key in hyperparams.keys() and isinstance(hyperparams[kwargs_key], str):
                 hyperparams[kwargs_key] = eval(hyperparams[kwargs_key])
@@ -736,7 +738,7 @@ class ExperimentManager:
         }
         # Pass n_actions to initialize DDPG/TD3 noise sampler
         # Sample candidate hyperparameters
-        sampled_hyperparams = HYPERPARAMS_SAMPLER[self.algo](trial, self.n_actions, n_envs, additional_args)
+        sampled_hyperparams = HYPERPARAMS_SAMPLER[self.algo](trial, self.n_actions, n_envs, additional_args, device=self.device)
         kwargs.update(sampled_hyperparams)
 
         env = self.create_envs(n_envs, no_log=True)

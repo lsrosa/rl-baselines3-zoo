@@ -7,28 +7,8 @@ from torch import nn as nn
 
 from rl_zoo3 import linear_schedule
 
-import json, torch, gym
-from policy.wraps import FKineLinkedWrap, FKineMonoWrap
-from fkine.fkine_linked import FKineLinked              
-from fkine.fkine_monolithic import FKineMono
-from rgym.envs.reacherPolicy import ReacherPolicy 
-from rgym.envs.ex_reacher_v0 import ExReacherEnv 
-print('start features extractor')
-_home = '/home/leandro/repos/iros2024/jacob/'
-_dummy_env = gym.make('ReacherPolicy', model_file = _home+'rgym/envs/assets/default.xml') 
-with open(_home+'results/fkine_models/default_kwargs.json', 'r') as f:
-    fkine_kwargs = json.load(f)
-fkine_model_name = fkine_kwargs.pop('model')
-fkine_model = eval(fkine_model_name)(**fkine_kwargs)
-print('fkine model: ', fkine_model)
-fkine_model.load_state_dict(torch.load(_home+'results/fkine_models/default_model.pt'))
-features_extractor_class = eval(fkine_model_name+'Wrap')
-print('features extractor: ', features_extractor_class)
-features_extractor_kwargs = {'fkine': fkine_model,
-                     'to_observation_space': _dummy_env.policy_observation_space}
-print('features extractor kwargs: ', features_extractor_kwargs)
-_dummy_env.close()
-print('end features extractor')
+import json, torch
+from policy.wraps import FKineWrap
 
 def sample_ppo_params(trial: optuna.Trial, n_actions: int, n_envs: int, additional_args: dict) -> Dict[str, Any]:
     """
@@ -183,7 +163,6 @@ def sample_trpo_params(trial: optuna.Trial, n_actions: int, n_envs: int, additio
         "policy_kwargs": dict(
             # log_std_init=log_std_init,
             net_arch=net_arch,
-            activation_fn=activation_fn,
             ortho_init=ortho_init,
         ),
     }
@@ -252,8 +231,19 @@ def sample_a2c_params(trial: optuna.Trial, n_actions: int, n_envs: int, addition
         ),
     }
 
+def get_fe_class_kwargs(device):
+    _home = '/home/leandro/repos/iros2024/jacob/'
+    fkine_kwargs_file = _home+'results/fkine_models/default_kwargs.json' 
+    
+    fe_class = FKineWrap
+    fe_kwargs = {
+            'fkine_kwargs_file':fkine_kwargs_file,
+            'device':device,
+            'freeze': True
+            }
+    return fe_class, fe_kwargs
 
-def sample_sac_params(trial: optuna.Trial, n_actions: int, n_envs: int, additional_args: dict) -> Dict[str, Any]:
+def sample_sac_params(trial: optuna.Trial, n_actions: int, n_envs: int, additional_args: dict, device='cpu') -> Dict[str, Any]:
     """
     Sampler for SAC hyperparams.
 
@@ -299,6 +289,8 @@ def sample_sac_params(trial: optuna.Trial, n_actions: int, n_envs: int, addition
     # if ent_coef == 'auto':
     #     # target_entropy = trial.suggest_categorical('target_entropy', ['auto', 5, 1, 0, -1, -5, -10, -20, -50])
     #     target_entropy = trial.suggest_float('target_entropy', -10, 10)
+    
+    fe_class, fe_kwargs = get_fe_class_kwargs(device)    
 
     hyperparams = {
         "gamma": gamma,
@@ -311,8 +303,7 @@ def sample_sac_params(trial: optuna.Trial, n_actions: int, n_envs: int, addition
         "ent_coef": ent_coef,
         "tau": tau,
         "target_entropy": target_entropy,
-        "policy_kwargs": dict(log_std_init=log_std_init, net_arch=net_arch),
-        #"policy_kwargs": dict(net_arch=net_arch),
+        "policy_kwargs": dict(log_std_init=log_std_init, net_arch=net_arch, features_extractor_class=fe_class, features_extractor_kwargs=fe_kwargs),
     }
 
     if additional_args["using_her_replay_buffer"]:

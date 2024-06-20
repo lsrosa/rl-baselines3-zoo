@@ -16,6 +16,9 @@ import rl_zoo3.import_envs  # noqa: F401
 from rl_zoo3.exp_manager_sac_fe import ExperimentManager
 from rl_zoo3.utils import ALGOS, StoreDict
 
+from rgym.envs.reacherPolicy import ReacherPolicy
+from rgym.envs.ex_reacher_v0 import ExReacherEnv
+
 def train_sac_fe() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--algo", help="RL Algorithm", default="ppo", type=str, required=False, choices=list(ALGOS.keys()))
