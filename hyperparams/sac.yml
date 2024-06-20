@@ -281,7 +281,7 @@ NeckEnvRelative-v2:
 # === Our Reacher
 ReacherPolicy:
   policy: 'MultiInputPolicy'
-  normalize: True
+  normalize: False 
   n_timesteps: !!float 1e6
   buffer_size: 100000
   batch_size: 256
