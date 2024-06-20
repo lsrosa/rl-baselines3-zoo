@@ -231,19 +231,16 @@ def sample_a2c_params(trial: optuna.Trial, n_actions: int, n_envs: int, addition
         ),
     }
 
-def get_fe_class_kwargs(device):
-    _home = '/home/leandro/repos/iros2024/jacob/'
-    fkine_kwargs_file = _home+'results/fkine_models/default_kwargs.json' 
-    
+def get_fe_class_kwargs(device, policy_observation_space):
     fe_class = FKineWrap
     fe_kwargs = {
-            'fkine_kwargs_file':fkine_kwargs_file,
             'device':device,
-            'freeze': True
+            'freeze': True,
+            'to_observation_space': policy_observation_space
             }
     return fe_class, fe_kwargs
 
-def sample_sac_params(trial: optuna.Trial, n_actions: int, n_envs: int, additional_args: dict, device='cpu') -> Dict[str, Any]:
+def sample_sac_params(trial: optuna.Trial, n_actions: int, n_envs: int, additional_args: dict, device='cpu', policy_observation_space=None) -> Dict[str, Any]:
     """
     Sampler for SAC hyperparams.
 
@@ -290,7 +287,7 @@ def sample_sac_params(trial: optuna.Trial, n_actions: int, n_envs: int, addition
     #     # target_entropy = trial.suggest_categorical('target_entropy', ['auto', 5, 1, 0, -1, -5, -10, -20, -50])
     #     target_entropy = trial.suggest_float('target_entropy', -10, 10)
     
-    fe_class, fe_kwargs = get_fe_class_kwargs(device)    
+    fe_class, fe_kwargs = get_fe_class_kwargs(device, policy_observation_space)    
 
     hyperparams = {
         "gamma": gamma,

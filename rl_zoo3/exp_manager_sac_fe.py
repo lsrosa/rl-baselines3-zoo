@@ -185,17 +185,18 @@ class ExperimentManager:
 
         :return: the initialized RL model
         """
+        # Create env to have access to action space for action noise
+        n_envs = 1 if self.algo == "ars" or self.optimize_hyperparameters else self.n_envs
+        env = self.create_envs(n_envs, no_log=False)
+        
         unprocessed_hyperparams, saved_hyperparams = self.read_hyperparameters()
         hyperparams, self.env_wrapper, self.callbacks, self.vec_env_wrapper = self._preprocess_hyperparams(
-            unprocessed_hyperparams
+            unprocessed_hyperparams,
+            env.envs[0].get_wrapper_attr('policy_observation_space')
         )
 
         self.create_log_folder()
         self.create_callbacks()
-
-        # Create env to have access to action space for action noise
-        n_envs = 1 if self.algo == "ars" or self.optimize_hyperparameters else self.n_envs
-        env = self.create_envs(n_envs, no_log=False)
 
         self._hyperparams = self._preprocess_action_noise(hyperparams, saved_hyperparams, env)
 
@@ -369,7 +370,7 @@ class ExperimentManager:
         return hyperparams
 
     def _preprocess_hyperparams(  # noqa: C901
-        self, hyperparams: Dict[str, Any]
+        self, hyperparams: Dict[str, Any], policy_observation_space
     ) -> Tuple[Dict[str, Any], Optional[Callable], List[BaseCallback], Optional[Callable]]:
         self.n_envs = hyperparams.get("n_envs", 1)
 
@@ -403,7 +404,7 @@ class ExperimentManager:
 
         # Pre-process policy/buffer keyword arguments
         # Convert to python object if needed
-        features_extractor_class, features_extractor_kwargs = get_fe_class_kwargs(self.device)
+        features_extractor_class, features_extractor_kwargs = get_fe_class_kwargs(self.device, policy_observation_space)
         
         for kwargs_key in {"policy_kwargs", "replay_buffer_class", "replay_buffer_kwargs"}:
             if kwargs_key in hyperparams.keys() and isinstance(hyperparams[kwargs_key], str):
@@ -738,10 +739,10 @@ class ExperimentManager:
         }
         # Pass n_actions to initialize DDPG/TD3 noise sampler
         # Sample candidate hyperparameters
-        sampled_hyperparams = HYPERPARAMS_SAMPLER[self.algo](trial, self.n_actions, n_envs, additional_args, device=self.device)
-        kwargs.update(sampled_hyperparams)
-
         env = self.create_envs(n_envs, no_log=True)
+
+        sampled_hyperparams = HYPERPARAMS_SAMPLER[self.algo](trial, self.n_actions, n_envs, additional_args, device=self.device, policy_observation_space=env.envs[0].get_wrapper_attr('policy_observation_space'))
+        kwargs.update(sampled_hyperparams)
 
         # By default, do not activate verbose output to keep
         # stdout clean with only the trial's results
