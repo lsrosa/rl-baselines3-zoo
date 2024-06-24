@@ -264,22 +264,18 @@ def sample_sac_params(trial: optuna.Trial, n_actions: int, n_envs: int, addition
     # You can comment that out when not using gSDE
     log_std_init = trial.suggest_float("log_std_init", -4, 1)
     # NOTE: Add "verybig" to net_arch when tuning HER
-    net_arch_type = trial.suggest_categorical("net_arch", ["t2", "t3", "t4", "s2", "s3", "s4"])
+    net_arch_type = trial.suggest_categorical("net_arch", ["t4", "t8", "s4", "s8", "m4", "m8", "l4", "l8"])
     # activation_fn = trial.suggest_categorical('activation_fn', [nn.Tanh, nn.ReLU, nn.ELU, nn.LeakyReLU])
 
     net_arch = {
-        "t2": [32, 32],
-        "t3": [32, 32, 32],
-        "t4": [32, 32, 32, 32],
-        "s2": [64, 64],
-        "s3": [64, 64, 64],
-        "s4": [64, 64, 64, 64],
-        #"small": [64, 64],
-        #"medium": [256, 256],
-        #"big": [400, 300],
-        # Uncomment for tuning HER
-        # "large": [256, 256, 256],
-        # "verybig": [512, 512, 512],
+        "t4": [32 for i in range(4)],
+        "t8": [32 for i in range(8)],
+        "s4": [64 for i in range(4)],
+        "s8": [64 for i in range(8)],
+        "m4": [128 for i in range(4)],
+        "m8": [128 for i in range(8)],
+        "l4": [256 for i in range(4)],
+        "l8": [256 for i in range(8)],
     }[net_arch_type]
 
     target_entropy = "auto"
